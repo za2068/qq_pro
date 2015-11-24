@@ -1,0 +1,24 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BUF_SIZE	client2.c	15;"	d	file:
+BUF_SIZE	server2.c	14;"	d	file:
+MY_PORT	server2.c	15;"	d	file:
+SERVER_IP	client2.c	14;"	d	file:
+SERVER_PORT	client2.c	13;"	d	file:
+client_data	server2.c	/^typedef struct client_data {$/;"	s	file:
+client_data::next	server2.c	/^	struct client_data * next;$/;"	m	struct:client_data	typeref:struct:client_data::client_data	file:	access:public
+client_data::num	server2.c	/^	int num;$/;"	m	struct:client_data	file:	access:public
+client_data::sd	server2.c	/^	int sd;$/;"	m	struct:client_data	file:	access:public
+client_data::tid	server2.c	/^	pthread_t tid;$/;"	m	struct:client_data	file:	access:public
+client_data_t	server2.c	/^} client_data_t;$/;"	t	typeref:struct:client_data	file:
+main	client2.c	/^int main() {$/;"	f
+main	server2.c	/^int main() {$/;"	f
+next	server2.c	/^	struct client_data * next;$/;"	m	struct:client_data	typeref:struct:client_data::client_data	file:	access:public
+num	server2.c	/^	int num;$/;"	m	struct:client_data	file:	access:public
+sd	server2.c	/^	int sd;$/;"	m	struct:client_data	file:	access:public
+start_chat	server2.c	/^void start_chat(void *p_client_data)$/;"	f	signature:(void *p_client_data)
+tid	server2.c	/^	pthread_t tid;$/;"	m	struct:client_data	file:	access:public
