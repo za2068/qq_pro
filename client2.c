@@ -13,9 +13,19 @@
 #define SERVER_PORT 6788
 #define SERVER_IP "127.0.0.1"
 #define BUF_SIZE	1024
+#define NAME_SIZE	20
 
-int main() {
+struct user {
+	int num;
+	int sd;
+	char name[NAME_SIZE];
+};
 
+int main()
+{
+
+	struct user my_data;
+	ssize_t len;
 	int ip;
 	inet_pton(AF_INET, SERVER_IP, &ip);
 
@@ -38,11 +48,27 @@ int main() {
 	}
 
 	char buffer[BUF_SIZE];
+
+	printf("your name:");
+	scanf("%s", my_data.name);
+
+	len = send(sd, my_data.name, strlen(my_data.name), 0);
+	if (len < 0) {
+		printf("send error!\n");
+		exit(0);
+	}
+
+	len = recv(sd, &my_data.num, sizeof(int), 0);
+	if (len < 0) {
+		printf("recieve error!\n");
+		exit(0);
+	}
+
 	while(1)
 	{
 		printf("input:");
 		scanf("%s", buffer);
-		int len = send(sd, buffer, strlen(buffer), 0);
+		len = send(sd, buffer, strlen(buffer), 0);
 		if (len < 0) {
 			printf("send error!\n");
 			exit(0);
