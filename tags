@@ -5,20 +5,67 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 BUF_SIZE	client2.c	15;"	d	file:
-BUF_SIZE	server2.c	14;"	d	file:
-MY_PORT	server2.c	15;"	d	file:
+BUF_SIZE	qq_c++/server.h	9;"	d
+BUF_SIZE	server2.c	9;"	d	file:
+IP_SIZE	qq_c++/server.h	10;"	d
+MY_PORT	qq_c++/server.cpp	3;"	d	file:
+MY_PORT	server2.c	10;"	d	file:
 SERVER_IP	client2.c	14;"	d	file:
 SERVER_PORT	client2.c	13;"	d	file:
+__CLIENT__	qq_c++/client.h	2;"	d
+__MESSAGE__	qq_c++/message_event.h	2;"	d
+__SERVER__	qq_c++/server.h	2;"	d
+age	qq_c++/client.h	/^	int age;$/;"	m	class:client	access:private
+buffer	qq_c++/server.h	/^	char buffer[BUF_SIZE];$/;"	m	class:qqServer	access:private
+client	qq_c++/client.h	/^class client $/;"	c
+client::age	qq_c++/client.h	/^	int age;$/;"	m	class:client	access:private
+client::ip	qq_c++/client.h	/^	char ip[15];$/;"	m	class:client	access:private
+client::name	qq_c++/client.h	/^	char name[20];$/;"	m	class:client	access:private
 client_data	server2.c	/^typedef struct client_data {$/;"	s	file:
+client_data::name	server2.c	/^	char name[20];$/;"	m	struct:client_data	file:	access:public
 client_data::next	server2.c	/^	struct client_data * next;$/;"	m	struct:client_data	typeref:struct:client_data::client_data	file:	access:public
 client_data::num	server2.c	/^	int num;$/;"	m	struct:client_data	file:	access:public
 client_data::sd	server2.c	/^	int sd;$/;"	m	struct:client_data	file:	access:public
 client_data::tid	server2.c	/^	pthread_t tid;$/;"	m	struct:client_data	file:	access:public
 client_data_t	server2.c	/^} client_data_t;$/;"	t	typeref:struct:client_data	file:
+client_head	server2.c	/^client_data_t *client_head;$/;"	v
+client_last	server2.c	/^client_data_t *client_last;$/;"	v
+client_sum	server2.c	/^int client_sum = 0;$/;"	v
+initServer	qq_c++/server.h	/^	int initServer();$/;"	p	class:qqServer	access:private	signature:()
+initSocket	qq_c++/server.h	/^	int initSocket;$/;"	m	class:qqServer	access:private
+ip	qq_c++/client.h	/^	char ip[15];$/;"	m	class:client	access:private
+ip	qq_c++/server.h	/^	char ip[IP_SIZE];$/;"	m	class:qqServer	access:private
+m_sd	qq_c++/server.h	/^	int m_sd;\/\/socket $/;"	m	class:qqServer	access:private
+m_server_addr	qq_c++/server.h	/^	struct sockaddr_in m_server_addr;$/;"	m	class:qqServer	typeref:struct:qqServer::sockaddr_in	access:private
 main	client2.c	/^int main() {$/;"	f
+main	qq_c++/main.cpp	/^int main(void)$/;"	f	signature:(void)
 main	server2.c	/^int main() {$/;"	f
+main	socket_client.c	/^int main()$/;"	f
+main	socket_server.c	/^int main()$/;"	f
+messageEvent	qq_c++/message_event.h	/^class messageEvent$/;"	c
+messageEvent::receiveMessage	qq_c++/message_event.h	/^	int receiveMessage(int sd, message * message);$/;"	p	class:messageEvent	access:private	signature:(int sd, message * message)
+messageEvent::sendMessage	qq_c++/message_event.h	/^	int sendMessage(int sd, message * message);$/;"	p	class:messageEvent	access:private	signature:(int sd, message * message)
+name	qq_c++/client.h	/^	char name[20];$/;"	m	class:client	access:private
+name	server2.c	/^	char name[20];$/;"	m	struct:client_data	file:	access:public
 next	server2.c	/^	struct client_data * next;$/;"	m	struct:client_data	typeref:struct:client_data::client_data	file:	access:public
 num	server2.c	/^	int num;$/;"	m	struct:client_data	file:	access:public
+qqServer	qq_c++/server.cpp	/^qqServer::qqServer()$/;"	f	class:qqServer	signature:()
+qqServer	qq_c++/server.h	/^	qqServer();$/;"	p	class:qqServer	access:public	signature:()
+qqServer	qq_c++/server.h	/^class qqServer$/;"	c
+qqServer::buffer	qq_c++/server.h	/^	char buffer[BUF_SIZE];$/;"	m	class:qqServer	access:private
+qqServer::initServer	qq_c++/server.h	/^	int initServer();$/;"	p	class:qqServer	access:private	signature:()
+qqServer::initSocket	qq_c++/server.h	/^	int initSocket;$/;"	m	class:qqServer	access:private
+qqServer::ip	qq_c++/server.h	/^	char ip[IP_SIZE];$/;"	m	class:qqServer	access:private
+qqServer::m_sd	qq_c++/server.h	/^	int m_sd;\/\/socket $/;"	m	class:qqServer	access:private
+qqServer::m_server_addr	qq_c++/server.h	/^	struct sockaddr_in m_server_addr;$/;"	m	class:qqServer	typeref:struct:qqServer::sockaddr_in	access:private
+qqServer::qqServer	qq_c++/server.cpp	/^qqServer::qqServer()$/;"	f	class:qqServer	signature:()
+qqServer::qqServer	qq_c++/server.h	/^	qqServer();$/;"	p	class:qqServer	access:public	signature:()
+qqServer::~qqServer	qq_c++/server.cpp	/^qqServer::~qqServer()$/;"	f	class:qqServer	signature:()
+qqServer::~qqServer	qq_c++/server.h	/^	~qqServer();$/;"	p	class:qqServer	access:public	signature:()
+receiveMessage	qq_c++/message_event.h	/^	int receiveMessage(int sd, message * message);$/;"	p	class:messageEvent	access:private	signature:(int sd, message * message)
 sd	server2.c	/^	int sd;$/;"	m	struct:client_data	file:	access:public
-start_chat	server2.c	/^void start_chat(void *p_client_data)$/;"	f	signature:(void *p_client_data)
+sendMessage	qq_c++/message_event.h	/^	int sendMessage(int sd, message * message);$/;"	p	class:messageEvent	access:private	signature:(int sd, message * message)
+start_chat	server2.c	/^void *start_chat(void *p_client_data)$/;"	f	signature:(void *p_client_data)
 tid	server2.c	/^	pthread_t tid;$/;"	m	struct:client_data	file:	access:public
+~qqServer	qq_c++/server.cpp	/^qqServer::~qqServer()$/;"	f	class:qqServer	signature:()
+~qqServer	qq_c++/server.h	/^	~qqServer();$/;"	p	class:qqServer	access:public	signature:()
