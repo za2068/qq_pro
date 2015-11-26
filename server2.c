@@ -23,7 +23,7 @@ typedef struct client_data {
 
 client_data_t *client_head;
 client_data_t *client_last;
-int client_sum = 0;
+int client_sum = 1;
 pthread_t join_tid;
 pthread_t start_join_tid;
 //pthread_t send_message_tid;
@@ -245,12 +245,13 @@ int main()
 		}
 	}
 
+	client_head = client_head->next;
 	client_data_temp = client_head;
 	while(client_data_temp != NULL)
 	{
 		printf("free client name=%s,num=%d\n", client_head->name, client_head->num);
-		client_data_temp->next = client_data_temp;
 		free(client_head);
+		client_data_temp = client_data_temp->next;
 		client_head = client_data_temp;
 	}
 
