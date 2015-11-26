@@ -199,14 +199,17 @@ int main()
 {
 	char cmd[20];
 	client_data_t *client_data_temp;
+	client_data_t client_head_data;
 	//set server socket address
 	struct sockaddr_in server_addr;
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(MY_PORT);
 
-	client_head = (client_data_t*)malloc(sizeof(client_data_t));
+	//client_head = (client_data_t*)malloc(sizeof(client_data_t));
+	
 	//*client_head->name = "server";
+	client_head = &client_head_data;
 	memcpy(client_head->name, "server", sizeof(7));
 	client_head->num = 0;
 	client_last = client_head;
