@@ -1,7 +1,3 @@
-/*
- *author: justaipanda
- *create time:2012/09/03 10:47:35
- */
 
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <pthread.h>
 
 #define SERVER_PORT 6788
 #define SERVER_IP "127.0.0.1"

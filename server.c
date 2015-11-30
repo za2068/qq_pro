@@ -11,6 +11,9 @@
 #define MY_PORT 	6788
 #define NAME_SIZE	20
 
+#define CMD_EXIT "exit"
+//#define CMD_NUM_EXIT 0
+
 
 typedef struct client_data {
 	int num;
@@ -23,7 +26,8 @@ typedef struct client_data {
 
 client_data_t *client_head;
 client_data_t *client_last;
-int client_sum = 1;
+int client_sum = 0; 
+int client_present_num = 0; //it will be the client num
 pthread_t join_tid;
 pthread_t start_join_tid;
 //pthread_t send_message_tid;
@@ -31,10 +35,12 @@ pthread_t start_listen_tid;
 void *join_return_p;
 int join_return;
 int server_sd;
+pthread_mutex_t mutex; 
 
 void *start_chat(void *p_client_data);
 void *start_listen(void *arg);
 void *start_join(void *arg);
+void shutdown_service();
 
 void *start_listen(void *arg)
 {
@@ -58,17 +64,34 @@ void *start_listen(void *arg)
 		client_data_t *p_client_data;
 		p_client_data = (client_data_t*)malloc(sizeof(client_data_t));
 
+		ret = pthread_mutex_lock(&mutex);
+		if(ret)
+		{
+			printf("%s:pthread_mutex_lock failed\n", __func__);
+			return -1;
+		}
+		client_sum++;
+		client_present_num++;
+		ret = pthread_mutex_unlock(&mutex);
+		if(ret)
+		{
+			printf("%s:pthread_mutex_unlock failed\n", __func__);
+			return -1;
+		}
+
+		client_last->next = p_client_data;
 		//insert new client_data into link
 		p_client_data->sd = sclient;
-		p_client_data->num = client_sum;
-		client_sum++;//change to atomic operation latter
-		client_last->next = p_client_data;
+		p_client_data->num = client_present_num;
+		//// need thread synchronization
+		
 		client_last = p_client_data;
 
 		pthread_create(&p_client_data->tid, NULL, &start_chat, p_client_data);
+
+		//start pthread_join if not started
 	}
 }
-
 
 void *start_join(void *arg)
 {
@@ -80,10 +103,10 @@ void *start_join(void *arg)
 		printf("%s:pthread detach failed!\n", __func__);
 	}
 
-	//zhangao, wrong here
+	////zhangao, wrong here
 	while(0)
 	{
-		//will change to create another thread to handle deleting work
+		////will change to create another thread to handle deleting work
 		//and it will be detached thread
 		pthread_join(join_tid, &join_return_p); 
 		memcpy(&join_return, join_return_p, sizeof(int));
@@ -92,6 +115,13 @@ void *start_join(void *arg)
 		client_front = client_head;
 		client_p = client_head->next;
 
+		// lock for client_sum
+		ret = pthread_mutex_lock(&mutex);
+		if(ret)
+		{
+			printf("%s:pthread_mutex_lock failed\n", __func__);
+			return -1;
+		}
 		//find client to delete
 		int client_sum_before = client_sum;
 		while( client_p->next != NULL)
@@ -113,11 +143,18 @@ void *start_join(void *arg)
 		
 		if(client_sum == client_sum_before)
 		{
-			printf("pthread_join:no user to delete,maybe other thread\n");
+			printf("pthread_join:no user to delete,wrong or other thread end\n");
 		}
 		else
 			printf("delete done\n");
-		//need add close sd
+		
+		ret = pthread_mutex_unlock(&mutex);
+		if(ret)
+		{
+			printf("%s:pthread_mutex_unlock failed\n", __func__);
+			return -1;
+		}
+		////need add close sd
 	}
 }
 
@@ -197,21 +234,26 @@ printf("get len = %d\n", len);
 
 int main()
 {
+	int ret,cmd_number;
 	char cmd[20];
-	client_data_t *client_data_temp;
-	client_data_t client_head_data;
+
 	//set server socket address
 	struct sockaddr_in server_addr;
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(MY_PORT);
 
-	//client_head = (client_data_t*)malloc(sizeof(client_data_t));
+	ret = pthread_mutex_init(&mutex, NULL);  
+	if(ret)
+	{
+		printf("init mutex failed\n");
+		return -1;
+	}
+
+	client_head = (client_data_t*)malloc(sizeof(client_data_t));
 	
-	//*client_head->name = "server";
-	client_head = &client_head_data;
 	memcpy(client_head->name, "server", sizeof(7));
-	client_head->num = 0;
+	client_head->num = client_present_num;
 	client_last = client_head;
 
 	if((server_sd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -230,22 +272,49 @@ int main()
 		exit(0);
 	}
 
-	pthread_create(&start_join_tid, NULL, &start_join, NULL);
 	//pthread_create(&send_message_tid, NULL, &send_message_interface, NULL);
 	pthread_create(&start_listen_tid, NULL, &start_listen, NULL);
+	pthread_create(&start_join_tid, NULL, &start_join, NULL);
 
 	while(1)
 	{
 		printf("your cmd:");
 		scanf("%s", cmd);
-		if(strcmp(cmd, "exit") == 0)
+
+		if(strcmp(cmd, CMD_EXIT) == 0)
 		{
 			printf("qq_pro is going to be shut down!\n");
+			shutdown_service();
 			break;
 		}
+		////need end other thing like end pthread
 	}
 
-	client_head = client_head->next;
+	return 0;
+}
+
+void shutdown_service()
+{
+	ssize_t len;
+
+	client_data_t *client_data_temp;
+	client_data_temp = client_head;
+
+	//send_shutdown_signal();
+	
+	client_data_temp = client_data_temp->next;
+	while(client_data_temp != NULL)
+	{
+		printf("send shutdown signal to %s, num = %d\n", 
+					client_data_temp->name, client_data_temp->num);
+		len = send(client_data_temp->sd, CMD_EXIT, strlen(CMD_EXIT));
+		if(len < 0)
+		{
+			printf("send shutdown signal to %s failed\n",client_data_temp->name);
+		}
+		client_data_temp = client_data_temp->next;
+	}
+
 	client_data_temp = client_head;
 	while(client_data_temp != NULL)
 	{
@@ -254,6 +323,15 @@ int main()
 		client_data_temp = client_data_temp->next;
 		client_head = client_data_temp;
 	}
+
+	ret = pthread_mutex_destroy(&mutex);
+	if(ret)
+	{
+		printf("mutet destroy failed\n");
+		return -1;
+	}
+
+	close(server_sd);
 
 	return 0;
 }
