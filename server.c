@@ -32,8 +32,9 @@ pthread_t join_tid;
 pthread_t start_join_tid;
 //pthread_t send_message_tid;
 pthread_t start_listen_tid;
-void *join_return_p;
-int join_return;
+//void *join_return_p;
+//int join_return;
+//int listen_return;
 int server_sd;
 pthread_mutex_t mutex; 
 
@@ -68,7 +69,7 @@ void *start_listen(void *arg)
 		if(ret)
 		{
 			printf("%s:pthread_mutex_lock failed\n", __func__);
-			return -1;
+			pthread_exit(NULL);
 		}
 		client_sum++;
 		client_present_num++;
@@ -76,7 +77,7 @@ void *start_listen(void *arg)
 		if(ret)
 		{
 			printf("%s:pthread_mutex_unlock failed\n", __func__);
-			return -1;
+			pthread_exit(NULL);
 		}
 
 		client_last->next = p_client_data;
@@ -102,14 +103,15 @@ void *start_join(void *arg)
 	{
 		printf("%s:pthread detach failed!\n", __func__);
 	}
+printf("in start_join\n");
 
 	////zhangao, wrong here
-	while(0)
+	while(1)
 	{
 		////will change to create another thread to handle deleting work
 		//and it will be detached thread
-		pthread_join(join_tid, &join_return_p); 
-		memcpy(&join_return, join_return_p, sizeof(int));
+		pthread_join(join_tid, NULL); 
+		//memcpy(&join_return, join_return_p, sizeof(int));
 		client_data_t *client_front;
 		client_data_t *client_p;
 		client_front = client_head;
@@ -120,7 +122,7 @@ void *start_join(void *arg)
 		if(ret)
 		{
 			printf("%s:pthread_mutex_lock failed\n", __func__);
-			return -1;
+			pthread_exit(NULL);
 		}
 		//find client to delete
 		int client_sum_before = client_sum;
@@ -129,7 +131,7 @@ void *start_join(void *arg)
 			if(client_p->tid = join_tid)
 			{
 				printf("deleting client name = %s, num = %d, tid = %d.\n", 
-							client_p->name, client_p->num, (int)client_p->tid);
+						client_p->name, client_p->num, (int)client_p->tid);
 				client_front->next = client_p->next;
 				free(client_p);
 				client_sum--;
@@ -152,7 +154,7 @@ void *start_join(void *arg)
 		if(ret)
 		{
 			printf("%s:pthread_mutex_unlock failed\n", __func__);
-			return -1;
+			pthread_exit(NULL);
 		}
 		////need add close sd
 	}
@@ -169,11 +171,11 @@ printf("in start_chat \n");
 
 	char buffer[BUF_SIZE];
 
-	ret = pthread_detach(pthread_self());
-	if(ret != 0)
-	{
-		printf("%s:pthread detach failed!\n", __func__);
-	}
+	//ret = pthread_detach(pthread_self());
+	//if(ret != 0)
+	//{
+	//	printf("%s:pthread detach failed!\n", __func__);
+	//}
 
 	/* recv name and send num */
 	len = recv(sclient, buffer, BUF_SIZE, 0);
@@ -217,7 +219,7 @@ printf("get len = %d\n", len);
 		buffer[len] = '\0';
 		printf("receive[%d]:%s\n", (int)len, buffer);
 		if (len > 0) {
-			if('q' == buffer[0]) {
+			if(strcmp(buffer, CMD_EXIT)) {
 				printf("server over!\n");
 				break;
 			}
@@ -296,6 +298,7 @@ int main()
 void shutdown_service()
 {
 	ssize_t len;
+	int ret;
 
 	client_data_t *client_data_temp;
 	client_data_temp = client_head;
@@ -307,7 +310,7 @@ void shutdown_service()
 	{
 		printf("send shutdown signal to %s, num = %d\n", 
 					client_data_temp->name, client_data_temp->num);
-		len = send(client_data_temp->sd, CMD_EXIT, strlen(CMD_EXIT));
+		len = send(client_data_temp->sd, CMD_EXIT, strlen(CMD_EXIT), 0);
 		if(len < 0)
 		{
 			printf("send shutdown signal to %s failed\n",client_data_temp->name);
@@ -328,11 +331,11 @@ void shutdown_service()
 	if(ret)
 	{
 		printf("mutet destroy failed\n");
-		return -1;
+		return;
 	}
 
 	close(server_sd);
 
-	return 0;
+	return;
 }
 

@@ -12,11 +12,18 @@
 #define BUF_SIZE	1024
 #define NAME_SIZE	20
 
+#define CMD_EXIT "exit"
+
 struct user {
 	int num;
 	int sd;
 	char name[NAME_SIZE];
 };
+
+int sd;
+pthread_t receive_ptid;
+
+void *start_receive(void *arg);
 
 int main()
 {
@@ -32,7 +39,6 @@ int main()
 	server_addr.sin_addr.s_addr = ip;
 	server_addr.sin_port = htons(SERVER_PORT);
 
-	int sd;
 	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		printf("socket error!\n");
 		exit(0);
@@ -61,6 +67,8 @@ int main()
 		exit(0);
 	}
 
+	pthread_create(&receive_ptid, NULL, &start_receive, NULL);
+
 	while(1)
 	{
 		printf("input:");
@@ -70,7 +78,17 @@ int main()
 			printf("send error!\n");
 			exit(0);
 		}
+	}
 
+	return 0;
+}
+
+void *start_receive(void *arg)
+{
+	ssize_t len;
+	char buffer[BUF_SIZE];
+	while(1)
+	{
 		len = recv(sd, buffer, BUF_SIZE, 0);
 		if (len < 0) {
 			printf("recieve error!\n");
@@ -78,8 +96,13 @@ int main()
 		}
 
 		buffer[len] = '\0';
+		if(strcmp(buffer, CMD_EXIT) == 0)
+		{
+			printf("receive exit signal form server\nexiting...\n");
+			pthread_exit(NULL);
+		}
 		printf("receive[%d]:%s\n", (int)len, buffer);
 	}
-
-	return 0;
+	pthread_exit(NULL);
 }
+
