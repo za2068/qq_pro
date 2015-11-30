@@ -28,13 +28,13 @@ client_data_t *client_head;
 client_data_t *client_last;
 int client_sum = 0; 
 int client_present_num = 0; //it will be the client num
-pthread_t join_tid;
-pthread_t start_join_tid;
+//pthread_t join_tid;
+//pthread_t start_join_tid;
 //pthread_t send_message_tid;
-pthread_t start_listen_tid;
 //void *join_return_p;
 //int join_return;
 //int listen_return;
+pthread_t start_listen_tid;
 int server_sd;
 pthread_mutex_t mutex; 
 
@@ -50,6 +50,11 @@ void *start_listen(void *arg)
 	if(ret != 0)
 	{
 		printf("%s:pthread detach failed!\n", __func__);
+	}
+	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);	
+	if(ret != 0)
+	{
+		printf("%s:pthread set asynchronous failed!\n", __func__);
 	}
 
 	while(1)
@@ -94,69 +99,69 @@ void *start_listen(void *arg)
 	}
 }
 
-void *start_join(void *arg)
+void delete_client(pthread_t tid)
 {
 	int ret;
 
-	ret = pthread_detach(pthread_self());
-	if(ret != 0)
+//	ret = pthread_detach(pthread_self());
+//	if(ret != 0)
+//	{
+//		printf("%s:pthread detach failed!\n", __func__);
+//	}
+//printf("in start_join\n");
+//
+//	////zhangao, wrong here
+//	while(1)
+//	{
+//		////will change to create another thread to handle deleting work
+//		//and it will be detached thread
+//		pthread_join(join_tid, NULL); 
+//		//memcpy(&join_return, join_return_p, sizeof(int));
+
+	client_data_t *client_front;
+	client_data_t *client_p;
+	client_front = client_head;
+	client_p = client_head->next;
+
+	// lock for client_sum
+	ret = pthread_mutex_lock(&mutex);
+	if(ret)
 	{
-		printf("%s:pthread detach failed!\n", __func__);
+		printf("%s:pthread_mutex_lock failed\n", __func__);
+		pthread_exit(NULL);
 	}
-printf("in start_join\n");
-
-	////zhangao, wrong here
-	while(1)
+	//find client to delete
+	int client_sum_before = client_sum;
+	while( client_p->next != NULL)
 	{
-		////will change to create another thread to handle deleting work
-		//and it will be detached thread
-		pthread_join(join_tid, NULL); 
-		//memcpy(&join_return, join_return_p, sizeof(int));
-		client_data_t *client_front;
-		client_data_t *client_p;
-		client_front = client_head;
-		client_p = client_head->next;
+		//delete client in the list,and close socket
+		if(client_p->tid == tid)
+		{
+			printf("deleting client name = %s, num = %d, tid = %d.\n", 
+					client_p->name, client_p->num, (int)client_p->tid);
+			client_front->next = client_p->next;
+			close(client_p->sd);
+			free(client_p);
+			client_sum--;
+			break;
+		}
 
-		// lock for client_sum
-		ret = pthread_mutex_lock(&mutex);
-		if(ret)
-		{
-			printf("%s:pthread_mutex_lock failed\n", __func__);
-			pthread_exit(NULL);
-		}
-		//find client to delete
-		int client_sum_before = client_sum;
-		while( client_p->next != NULL)
-		{
-			if(client_p->tid = join_tid)
-			{
-				printf("deleting client name = %s, num = %d, tid = %d.\n", 
-						client_p->name, client_p->num, (int)client_p->tid);
-				client_front->next = client_p->next;
-				free(client_p);
-				client_sum--;
-				break;
-			}
-
-			//delete client in the list
-			client_front = client_front->next;
-			client_p = client_p->next;
-		}
-		
-		if(client_sum == client_sum_before)
-		{
-			printf("pthread_join:no user to delete,wrong or other thread end\n");
-		}
-		else
-			printf("delete done\n");
-		
-		ret = pthread_mutex_unlock(&mutex);
-		if(ret)
-		{
-			printf("%s:pthread_mutex_unlock failed\n", __func__);
-			pthread_exit(NULL);
-		}
-		////need add close sd
+		client_front = client_front->next;
+		client_p = client_p->next;
+	}
+	
+	if(client_sum == client_sum_before)
+	{
+		printf("pthread_join:no user to delete,wrong or other thread end\n");
+	}
+	else
+		printf("delete done\n");
+	
+	ret = pthread_mutex_unlock(&mutex);
+	if(ret)
+	{
+		printf("%s:pthread_mutex_unlock failed\n", __func__);
+		pthread_exit(NULL);
 	}
 }
 
@@ -171,18 +176,23 @@ printf("in start_chat \n");
 
 	char buffer[BUF_SIZE];
 
-	//ret = pthread_detach(pthread_self());
-	//if(ret != 0)
-	//{
-	//	printf("%s:pthread detach failed!\n", __func__);
-	//}
+	ret = pthread_detach(pthread_self());
+	if(ret != 0)
+	{
+		printf("%s:pthread detach failed!\n", __func__);
+	}
+	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);	
+	if(ret != 0)
+	{
+		printf("%s:pthread set asynchronous failed!\n", __func__);
+	}
 
 	/* recv name and send num */
 	len = recv(sclient, buffer, BUF_SIZE, 0);
 	if (len < 0) {
 		printf("recieve name error!\n");
-		client_data_p->thread_return = -1;
-		return &client_data_p->thread_return;
+		delete_client(client_data_p->tid);
+		pthread_exit(NULL);
 	}
 	//client_data_p->name = *buffer
 	memcpy(client_data_p->name, buffer, NAME_SIZE);
@@ -192,23 +202,18 @@ printf("get name = %s\n", client_data_p->name);
 	//ret = sprintf(buffer, "%d", client_data_p->num);
 	//*buffer = (char*)client_data_p->num;
 	memcpy(buffer, &client_data_p->num, sizeof(int));
-	if(ret < 0)
-	{
-		printf("sprintf wrong !\n");
-		client_data_p->thread_return = -1;
-		return &client_data_p->thread_return;
-	}
+
 	len = send(sclient, buffer, sizeof(int), 0);
 	if(ret < 0)
 	{
 		printf("send back error!\n");
-		client_data_p->thread_return = -1;
-		return &client_data_p->thread_return;
+		delete_client(client_data_p->tid);
+		pthread_exit(NULL);
 	}
 
 	//printout received message
 	while(1) {
-
+printf("in start_chat_thread \n");
 		len = recv(sclient, buffer, BUF_SIZE, 0);
 printf("get len = %d\n", len);
 		if (len < 0) {
@@ -221,16 +226,20 @@ printf("get len = %d\n", len);
 		if (len > 0) {
 			if(strcmp(buffer, CMD_EXIT)) {
 				printf("server over!\n");
-				break;
+				delete_client(client_data_p->tid);
+				pthread_exit(NULL);
 			}
 				
 			char* buffer2 = "I'm a server!";
 			len = send(sclient, buffer2, strlen(buffer2), 0);
 			if (len < 0)
+			{
 				printf("send error!\n");
+				break;
+			}
 		}
 	}
-	close(sclient);
+	delete_client(client_data_p->tid);
 	return 0;
 }
 
@@ -276,7 +285,7 @@ int main()
 
 	//pthread_create(&send_message_tid, NULL, &send_message_interface, NULL);
 	pthread_create(&start_listen_tid, NULL, &start_listen, NULL);
-	pthread_create(&start_join_tid, NULL, &start_join, NULL);
+	//pthread_create(&start_join_tid, NULL, &start_join, NULL);
 
 	while(1)
 	{
