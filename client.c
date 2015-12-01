@@ -22,12 +22,18 @@ struct user {
 
 int sd;
 pthread_t receive_ptid;
+pthread_t contrl_ptid;
+pthread_mutex_t contrl_mutex;
+pthread_cond_t contrl_cond;
+int is_exit_status = 0;
+
+char buffer[BUF_SIZE];
 
 void *start_receive(void *arg);
+void *start_contrl(void *arg);
 
 int main()
 {
-
 	struct user my_data;
 	ssize_t len;
 	int ip;
@@ -50,7 +56,6 @@ int main()
 		exit(0);
 	}
 
-	char buffer[BUF_SIZE];
 
 	printf("your name:");
 	scanf("%s", my_data.name);
@@ -68,7 +73,54 @@ int main()
 	}
 
 	pthread_create(&receive_ptid, NULL, &start_receive, NULL);
+	pthread_create(&contrl_ptid, NULL, &start_contrl, NULL);
 
+	while(1)
+	{
+		pthread_mutex_lock(&contrl_mutex);
+		pthread_cond_wait(&contrl_cond, &contrl_mutex);
+		if(is_exit_status)
+		{
+			if(pthread_cancel(receive_ptid))
+			{
+				printf("pthread_receive 1cancel failed, tid = %d \n", (int)receive_ptid);
+			}
+			if(pthread_cancel(contrl_ptid))
+			{
+				printf("pthread_receive 1cancel failed, tid = %d \n", (int)contrl_ptid);
+			}
+			break;
+		}
+		pthread_mutex_unlock(&contrl_mutex);
+	}
+
+	if(pthread_mutex_destroy(&contrl_mutex))
+	{
+		printf("destory contrl_mutex failed\n");
+	}
+	if(pthread_cond_destroy(&contrl_cond))
+	{
+		printf("destory contrl_cond failed\n");
+	}
+	/* close socket */
+	close(sd);
+
+	return 0;
+}
+
+void *start_contrl(void *arg)
+{
+	ssize_t len;
+
+	if(pthread_detach(pthread_self()))
+	{
+		printf("%s:pthread detach failed!\n", __func__);
+	}
+	if(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL))
+	{
+		printf("set pthread cancel type failed\n");
+		return;
+	}
 	while(1)
 	{
 		printf("input:");
@@ -79,14 +131,23 @@ int main()
 			exit(0);
 		}
 	}
-
-	return 0;
+	return;
 }
 
 void *start_receive(void *arg)
 {
 	ssize_t len;
 	char buffer[BUF_SIZE];
+
+	if(pthread_detach(pthread_self()))
+	{
+		printf("%s:pthread detach failed!\n", __func__);
+	}
+	if(pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL))
+	{
+		printf("set pthread cancel type failed\n");
+		return;
+	}
 	while(1)
 	{
 		len = recv(sd, buffer, BUF_SIZE, 0);
@@ -94,12 +155,21 @@ void *start_receive(void *arg)
 			printf("recieve error!\n");
 			exit(0);
 		}
+		if(len == 0)
+		{
+			printf("server disconnected!\nexiting...\n");
+			exit(0);
+		}
 
 		buffer[len] = '\0';
 		if(strcmp(buffer, CMD_EXIT) == 0)
 		{
 			printf("receive exit signal form server\nexiting...\n");
-			pthread_exit(NULL);
+			//pthread_exit(NULL);
+			pthread_mutex_lock(&contrl_mutex);
+			is_exit_status = 1;
+			pthread_cond_signal(&contrl_cond);
+			pthread_mutex_unlock(&contrl_mutex);
 		}
 		printf("receive[%d]:%s\n", (int)len, buffer);
 	}
