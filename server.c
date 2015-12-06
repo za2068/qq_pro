@@ -154,7 +154,10 @@ printf("deleting tid = %d\n", (int)tid);
 			printf("deleting client name = %s, num = %d, tid = %d.\n", 
 					client_p->name, client_p->num, (int)client_p->tid);
 			if(client_p->next == NULL)
+			{
 				client_last = client_front;
+				client_last->next = NULL;
+			}
 			else
 				client_front->next = client_p->next;
 			close(client_p->sd);
@@ -329,7 +332,8 @@ int main()
 	}
 
 	if (bind(server_sd, (struct sockaddr*)&server_addr, 
-				sizeof(server_addr)) < 0) { printf("bind error!\n");
+				sizeof(server_addr)) < 0) {
+		printf("bind error!\n");
 		exit(0);
 	}
 
